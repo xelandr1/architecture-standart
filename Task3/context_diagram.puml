@@ -1,0 +1,22 @@
+@startuml context
+
+!include <C4/C4_Context>
+
+Person(User, "Клиент")
+Person(Manager, "Специалист банка")
+
+System(UI, "Интернет-банк")
+System(DepositsControl, "Депозиты", "Управления депозитами")
+System(ABS, "АБС")
+System_Ext(SMS, "SMS-шлюз")
+System_Ext(CallCenter, "Колл-центр")
+
+Rel_D(User, UI, "Создает заявку", "HTTPS")
+Rel(User, CallCenter, "Создает обращение", "Телефония")
+Rel(UI, DepositsControl, "Получает данные", "HTTPS")
+Rel(DepositsControl, CallCenter, "Обрабатывает заявку", "HTTPS")
+Rel(DepositsControl, SMS, "Отправляет уведомление", "HTTPS")
+BiRel(DepositsControl, ABS, "Обмен данными", "HTTPS")
+Rel_R(Manager, User, "Согласует ставки", "HTTPS")
+
+@enduml
