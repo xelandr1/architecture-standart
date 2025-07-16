@@ -1,0 +1,17 @@
+@startuml context
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(User, "Клиент")
+Person(Manager, "Специалист Колл-центра")
+
+System(SFTP, "SFTP-Сервер")
+System(Deposits, "Депозиты")
+System_Ext(CallCenter, "Колл-центр")
+
+Rel_D(User, CallCenter, "Звонит в колл-центр для получения информации о ставках по депозитам", "Телефония")
+Rel_R(Manager, CallCenter, "Принимает звонки и заявки от клиентов", "Телефон")
+Rel_D(Manager, SFTP, "Запрашивает ставки по депозитам", "SFTP")
+Rel_L(Deposits, SFTP, "Передает ставки по депозитам", "SFTP")
+
+@enduml

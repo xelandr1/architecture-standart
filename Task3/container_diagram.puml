@@ -1,0 +1,64 @@
+@startuml containers
+
+!include <C4/C4_Container>
+
+
+Person(User, "Клиент")
+Person(BackOffice, "Менеджер", "Сотрудник бэк-офиса")
+Person(FrontOffice, "Менеджер", "Сотрудник фронт-офиса")
+
+System_Ext(CallCenter, "Колл-центр", "Клиент-серверная система на платформе подрядчика")
+System_Ext(SMS, "Телеком-оператор", "Внешний оператор по отправке СМС")
+
+Container(ApiGateway, "API Gateway", "Kong", "Проксирует запросы. Авторизует пользователей")
+
+ContainerQueue(Queue, "Очередь сообщений", "Kafka", "Передача сообщений между сервисами")
+
+Container_Boundary(InternetBank, "Интернет-банк (монолит)") {
+	Container(CurrentAppIB, "Веб-приложение", "ASP.NET MVC 4.5", "Существующее веб-приложение")
+	ContainerDb(CurrentDbIB, "База данных интернет-банка", "MS SQL", "Хранит данные")
+	Rel_D(CurrentAppIB, CurrentDbIB, "Чтение/Запись", "SQL")
+}
+
+Container_Boundary(DepositsService, "Сервис депозитов") {
+	Container(DepositsUI, "Микрофронтенд депозитов", "React", "Интерфейс для работы с депозитами")
+	Container(DepositsApi, "API сервиса депозитов", "Python", "Бэкенд для работы с депозитами")
+	ContainerDb(DepositsDb, "База данных депозитов", "PostgreSQL", "Хранит данные о депозитах")
+	Rel_D(DepositsApi, DepositsDb, "Чтение/Запись", "SQL")
+}
+
+Container_Boundary(ABS, "АБС") {
+	Container(ClientABS, "Десктопное приложение", "Delphi", "Основной инструмент работы менеджеров")
+	Container(DbABS, "База данных АБС", "Oracle", "Хранит данные. Выполняет бизнес-логику через хранимые процедуры")
+	Container(LimiterABS, "Рейт-лимитер", "Java", "Рейт-лимитер на чтение из очереди")
+	Rel_D(ClientABS, DbABS, "Чтение/Запись", "SQL")
+	Rel(LimiterABS, DbABS, "Записывает", "SQL")
+}
+
+Container_Ext(Notifications, "Система уведомлений", "TBD", "Рассылает уведомления клиентам")
+Container_Ext(Monitoring, "Система мониторинга", "TBD", "Система мониторинга и алертинга")
+Container_Ext(ManagersPanel, "Панель менеджеров", "React", "Веб-приложение для работы менеджеров")
+
+Rel(User, CurrentAppIB, "Работает с системой", "HTTPS")
+Rel(User, CallCenter, "Оставляет заявки", "Телефон")
+Rel(SMS, User, "Отправляет уведомления", "SMS")
+
+Rel(BackOffice, ClientABS, "Работает с системой")
+Rel(FrontOffice, ClientABS, "Работает с системой")
+Rel(BackOffice, ManagersPanel, "Работает с системой", "HTTPS")
+Rel(FrontOffice, ManagersPanel, "Работает с системой", "HTTPS")
+Rel(CallCenter, ManagersPanel, "Передает заявки", "HTTPS")
+
+Rel(ApiGateway, DepositsApi, "Проксирует запросы", "HTTPS")
+Rel(DepositsUI, ApiGateway, "Запрашивает данные", "REST API, HTTPS")
+Rel(ManagersPanel, ApiGateway, "Запрашивает данные", "HTTPS")
+
+Rel(DepositsUI, CurrentAppIB, "Встраивается в существующее решение", "JavaScript, HTTPS")
+Rel(DepositsApi, Queue, "Отправляет события", "Kafka")
+Rel(Queue, Notifications, "Читает события", "Kafka")
+Rel(Notifications, SMS, "Отправляет СМС", "HTTP API")
+Rel(LimiterABS, Queue, "Читает события", "Kafka")
+Rel(DepositsApi, Queue, "Читает события", "Kafka")
+Rel(ClientABS, Queue, "Отправляет события", "Kafka")
+
+@enduml

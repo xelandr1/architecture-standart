@@ -1,0 +1,31 @@
+@startuml containers
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(CallCenterManager, "Специалист Кол-центра")
+Person(BackOffice, "Специалист бэк-офиса", "Менеджер по работе с депозитами")
+
+ContainerQueue(Queue, "Очередь сообщений", "Kafka",)
+
+Container_Boundary(file_transfer, "Передача файлов") {
+	Container(SFTP, "SFTP-Сервер", "SFTP", "Сервер для передачи ставок по депозитам")
+	Container(S3, "S3-хранилище", "S3")
+	Container(FileApi, "API хранилища", "REST", "API для работы с S3-хранилищем")
+
+	Rel_D(SFTP, S3, "Получает файлы", "S3")
+	Rel_L(FileApi, S3, "Записывает файлы", "S3")
+}
+
+System_Ext(Deposits, "Депозиты", "Система управления депозитами")
+
+
+System_Ext(CallCenter, "Кол-центр")
+
+Rel_D(Deposits, Queue, "Отправляет ставки по депозитам", "Kafka")
+Rel_R(FileApi, Queue, "Получает ставки по депозитам", "Kafka")
+Rel_R(CallCenterManager, CallCenter, "Принимает звонки и заявки от клиентов", "Телефон")
+Rel_D(CallCenterManager, SFTP, "Запрашивает ставки по депозитам", "SFTP")
+Rel_D(BackOffice, Deposits, "Обновляет ставки по депозитам", "HTTPS")
+
+@enduml
